@@ -18,6 +18,7 @@ function App() {
   >(null);
 
   const [locationId, setLocationid] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const locationsQuery = useGetLocationsQuery();
   useEffect(() => {
@@ -27,6 +28,18 @@ function App() {
       setLocationid(locations[0].id);
     }
   }, [locationsQuery]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   const trendQuery = useGetLast13WeekTrendQuery(locationId, {
     pollingInterval: 10000,
@@ -48,6 +61,24 @@ function App() {
     locationsQuery.isLoading;
 
   if (isDashboardLoading) return <DashboardSkeleton />;
+
+  const toggleFullscreen = async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+      } catch {
+        // Ignore fullscreen permission/runtime failures.
+      }
+      return;
+    }
+
+    try {
+      await document.exitFullscreen();
+    } catch {
+      // Ignore fullscreen exit failures.
+    }
+  };
+
   const renderFullScreenCard = () => {
     switch (fullscreenCard) {
       case "trend":
@@ -83,8 +114,12 @@ function App() {
         locations={locationsQuery.data?.data}
         setLocationId={setLocationid}
         locationId={locationId}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2 px-2 w-full min-w-0">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2 px-2 w-full min-w-0"
+      >
         <WeekTrendOverview
           setFullscreenCard={setFullscreenCard}
           fullscreen={fullscreenCard}

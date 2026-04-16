@@ -33,6 +33,8 @@ export type LocationsResponse = {
 
 export type HeaderArguments = {
   locations: Location[];
-  setLocationId: React.Dispatch<React.SetStateAction<number | null>>
+  setLocationId: React.Dispatch<React.SetStateAction<number | null>>;
   locationId: number | null;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 };
