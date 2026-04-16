@@ -147,9 +147,6 @@ const WeekTrendOverview = ({
                   {series.label}
                 </p>
               </div>
-              <p className="text-xl font-bold text-slate-900 tabular-nums">
-                {chartData.length ? chartData[chartData.length - 1][series.key] : 0}
-              </p>
             </div>
 
             <div className="flex-1 min-h-[180px]">
