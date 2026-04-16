@@ -33,19 +33,13 @@ export default function FoxyServiceEntries({
 }: WeekTrendOverviewProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const captured = data?.currentPercentage;
-  const pending = data?.remainingPercentage;
+  const captured = Number(data?.currentPercentage ?? 0);
+  const pending = Number(data?.remainingPercentage ?? 0);
 
   const pieData = [
     { name: "Captured", value: captured, fill: "#f59e0b" },
     { name: "Remaining", value: pending, fill: "#bfdbfe" },
   ];
-
-  const progressRows = [
-    { label: "Entered", value: captured, color: "bg-amber-500" },
-    { label: "Pending", value: pending, color: "bg-blue-300" },
-  ];
-
   useEffect(() => {
     console.log(data);
   }, [data]);
@@ -77,9 +71,8 @@ export default function FoxyServiceEntries({
         </div>
       </div>
 
-      <div className="grid grid-cols-[180px_1fr] gap-6 items-center flex-1 mt-4">
-        {/* bar chart(x-axis label needs fixing) */}
-        <div className={`relative ${fullscreen === "foxi" ? "h-full" : "h-45"} w-45`}>
+      <div className="flex items-center justify-center flex-1 mt-4">
+        <div className={`relative ${fullscreen === "foxi" ? "h-full max-h-[420px]" : "h-45"} w-full max-w-[320px]`}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -119,7 +112,7 @@ export default function FoxyServiceEntries({
               <p className="text-xs font-semibold text-gray-900">Entered</p>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-3 h-3 rounded-sm bg-amber-500" />
-                <span className="text-xs text-gray-500">Entered: 30%</span>
+                <span className="text-xs text-gray-500">Entered: {captured}%</span>
               </div>
             </div>
           )}
@@ -133,52 +126,10 @@ export default function FoxyServiceEntries({
 
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-3 h-3 rounded-sm bg-blue-300" />
-                <span className="text-xs text-gray-500">Remaining: 70%</span>
+                <span className="text-xs text-gray-500">Remaining: {pending}%</span>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Right-side progress */}
-        <div className="space-y-4">
-          {progressRows.map((row) => (
-            <div key={row.label}>
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-gray-600">{row.label}</span>
-                <span className="font-semibold text-gray-900">
-                  {row.value}%
-                </span>
-              </div>
-
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`${row.color} h-full rounded-full`}
-                  style={{ width: `${row.value}%` }}
-                />
-              </div>
-            </div>
-          ))}
-
-          {/* Overall progress */}
-          <div>
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-gray-600">Overall progress</span>
-              <span className="font-semibold text-gray-900">
-                {pieData[0].value} / 100
-              </span>
-            </div>
-
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`bg-amber-500 h-full rounded-full w-[${pieData[0].value}%]`}
-              />
-            </div>
-          </div>
-
-          {/* Warning */}
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-600">
-            ⚠ {pieData[1].value} entries remaining to target
-          </div>
         </div>
       </div>
     </div>

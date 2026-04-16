@@ -1,75 +1,111 @@
+import { useMemo } from "react";
+import { TbArrowsDiagonal } from "react-icons/tb";
 import {
   CartesianGrid,
+  LabelList,
   Line,
   LineChart,
   ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
-import { TbArrowsDiagonal } from "react-icons/tb";
-import { useMemo } from "react";
 import type { KpiAPIData, WeekTrendOverviewProps } from "../types/types";
 
-// const SmoothActiveDot = ({ cx, cy, stroke }) => {
-//   return (
-//     <circle
-//       cx={cx}
-//       cy={cy}
-//       r={6}
-//       fill={stroke}
-//       stroke="white"
-//       strokeWidth={2}
-//       style={{
-//         filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.15))",
-//         transformOrigin: `${cx}px ${cy}px`,
-//         animation: "dotPop 0.25s ease-out",
-//       }}
-//     />
-//   );
-// };
+type TrendSeriesKey =
+  | "Fehlende_Doku"
+  | "MVZ_Karten_Fehlen"
+  | "MVZ_karten_ohne_Leistung"
+  | "ohne_Leistung";
+
+type TrendPoint = {
+  name: string;
+  Fehlende_Doku: number;
+  MVZ_Karten_Fehlen: number;
+  MVZ_karten_ohne_Leistung: number;
+  ohne_Leistung: number;
+};
+
+const KPI_CONFIG: Array<{
+  key: TrendSeriesKey;
+  label: string;
+  color: string;
+}> = [
+  { key: "Fehlende_Doku", label: "Fehlende Doku", color: "#2563eb" },
+  { key: "MVZ_Karten_Fehlen", label: "MVZ Karten Fehlen", color: "#ef4444" },
+  {
+    key: "MVZ_karten_ohne_Leistung",
+    label: "MVZ Karten ohne Leistung",
+    color: "#9333ea",
+  },
+  { key: "ohne_Leistung", label: "Ohne Leistung", color: "#16a34a" },
+];
+
+const renderValueLabel =
+  (color: string) =>
+  ({
+    x,
+    y,
+    value,
+  }: {
+    x?: number;
+    y?: number;
+    value?: number | string;
+  }) => {
+    if (x === undefined || y === undefined || value === undefined || value === null) {
+      return null;
+    }
+
+    const stringValue = String(value);
+    const labelWidth = Math.max(28, stringValue.length * 7 + 10);
+    const labelY = Math.max(y - 12, 14);
+
+    return (
+      <g>
+        <rect
+          x={x - labelWidth / 2}
+          y={labelY - 11}
+          width={labelWidth}
+          height={16}
+          rx={5}
+          fill="#ffffff"
+          fillOpacity={0.92}
+        />
+        <text
+          x={x}
+          y={labelY}
+          fill={color}
+          fontSize={10}
+          fontWeight={700}
+          textAnchor="middle"
+          dominantBaseline="middle"
+        >
+          {value}
+        </text>
+      </g>
+    );
+  };
 
 const WeekTrendOverview = ({
   setFullscreenCard,
   fullscreen,
-  data
+  data,
 }: WeekTrendOverviewProps) => {
-  // const data1 = [
-  //   { name: "W1", uv: 400, pv: 2400, amt: 2400, si: 1800 },
-  //   { name: "W2", uv: 300, pv: 4567, amt: 2900, si: 900 },
-  //   { name: "W3", uv: 320, pv: 1398, amt: 1500, si: 2500 },
-  //   { name: "W4", uv: 200, pv: 9800, amt: 2400, si: 1550 },
-  //   { name: "W5", uv: 278, pv: 3908, amt: 2400, si: 2780 },
-  //   { name: "W6", uv: 189, pv: 4800, amt: 2400, si: 2460 },
-  // ];
+  const trendDataFromApi = data?.data;
 
-  const trendDataFromApi = data?.data?.data;
+  const chartData = useMemo<TrendPoint[]>(() => {
+    if (!trendDataFromApi) {
+      return [];
+    }
 
-  const COLORS = ["#2563eb", "#9333ea", "#ef4444", "#16a34a"];
-
-  const chartData = useMemo(() => {
-    if (!trendDataFromApi) return [];
-
-    return trendDataFromApi.map((d: KpiAPIData, index: number) => ({
+    return trendDataFromApi.map((week: KpiAPIData, index: number) => ({
       name: `W${index + 1}`,
-      ...d.kpis,
+      ...week.kpis,
     }));
   }, [trendDataFromApi]);
 
-  const legendItems = useMemo(() => {
-    if (!chartData.length) return [];
-
-    return Object.keys(chartData[0])
-      .filter((key) => key !== "name")
-      .map((key, index) => ({
-        key,
-        label: key.replaceAll("_", " "),
-        color: COLORS[index],
-      }));
-  }, [chartData]);
-
   return (
     <div
-      className={`md:col-span-2 bg-white rounded-2xl p-4  flex flex-col shadow-sm min-w-0 ${fullscreen === "trend" ? "h-full" : ""}`}
+      className={`md:col-span-2 bg-white rounded-2xl p-4 flex flex-col shadow-sm min-w-0 ${fullscreen === "trend" ? "h-full" : ""}`}
     >
       <div className="flex justify-between">
         <div>
@@ -77,7 +113,7 @@ const WeekTrendOverview = ({
             13-Week Trend Overview
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Weekly development across all four KPIs
+            Weekly development split by KPI for better readability
           </p>
         </div>
 
@@ -95,58 +131,64 @@ const WeekTrendOverview = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 mt-4 text-xs py-2 rounded-md px-4 text-gray-600 bg-blue-50">
-        {legendItems.map((item) => (
-          <div key={item.label} className="flex items-center gap-2">
-            <div
-              className="w-6 h-1 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-            <span>{item.label}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 flex-1 min-h-0">
+        {KPI_CONFIG.map((series) => (
+          <div
+            key={series.key}
+            className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 px-4 py-4 flex flex-col min-h-[240px] shadow-sm"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full shadow-sm"
+                  style={{ backgroundColor: series.color }}
+                />
+                <p className="text-sm font-semibold text-slate-900">
+                  {series.label}
+                </p>
+              </div>
+              <p className="text-xl font-bold text-slate-900 tabular-nums">
+                {chartData.length ? chartData[chartData.length - 1][series.key] : 0}
+              </p>
+            </div>
+
+            <div className="flex-1 min-h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 30, right: 18, bottom: 22, left: 22 }}
+                >
+                  <CartesianGrid vertical={false} stroke="#cbd5e1" strokeOpacity={0.35} />
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    style={{ fontSize: "10px", fill: "#64748b" }}
+                    dy={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    style={{ fontSize: "10px", fill: "#64748b" }}
+                    width={34}
+                    dx={-4}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={series.key}
+                    stroke={series.color}
+                    strokeWidth={3}
+                    dot={{ r: 3.5, strokeWidth: 2, fill: "#ffffff", stroke: series.color }}
+                    activeDot={{ r: 5, stroke: series.color, fill: "#ffffff" }}
+                    isAnimationActive={false}
+                  >
+                    <LabelList content={renderValueLabel(series.color)} />
+                  </Line>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         ))}
-      </div>
-
-      <div
-        className={`${fullscreen === "trend" ? "flex-1 min-h-[80%]" : "h-45"} mt-4 min-w-0`}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid vertical={true} strokeOpacity={0.25} />
-            <XAxis
-              dataKey="name"
-              tickLine={false}
-              axisLine={false}
-              style={{ fontSize: "12px" }}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              style={{ fontSize: "12px" }}
-              width="auto"
-            />
-            {legendItems.length > 0 &&
-              legendItems.map((key, index) => (
-                <Line
-                  dataKey={key.key}
-                  key={index}
-                  stroke={`#${key.color}`}
-                  strokeWidth={2}
-                  type={"monotone"}
-                  activeDot={{ stroke: `#${key.color}`, r: 4 }}
-                  animationDuration={600}
-                />
-              ))}
-             {/* <Line
-              dataKey="uv"
-              stroke="#2563eb"
-              strokeWidth={2}
-              type={"monotone"}
-              activeDot={{ stroke: "#2563eb", r: 6 }}
-              animationDuration={600}
-            /> */}
-          </LineChart>
-        </ResponsiveContainer>
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ export type KpiAPIData = {
   week: string;
   weekStart: Date;
   weekEnd: Date;
-  kpis: KpiTrendData[];
+  kpis: KpiTrendData;
 };
 
 export type Location = {
