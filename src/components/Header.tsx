@@ -1,8 +1,15 @@
 import { useState } from "react";
 import type { HeaderArguments } from "../types/types";
 import LiveTimer from "./LiveTimer";
+import { TbArrowsMaximize, TbArrowsMinimize } from "react-icons/tb";
 
-const Header = ({ locations, setLocationId, locationId }: HeaderArguments) => {
+const Header = ({
+  locations,
+  setLocationId,
+  locationId,
+  isFullscreen,
+  onToggleFullscreen,
+}: HeaderArguments) => {
   const [isEngSelected, setIsEngselected] = useState<boolean>(false);
 
   return (
@@ -56,6 +63,15 @@ const Header = ({ locations, setLocationId, locationId }: HeaderArguments) => {
             </option>
           ))}
         </select>
+        <button
+          onClick={onToggleFullscreen}
+          className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 hover:cursor-pointer transition inline-flex items-center gap-1.5"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+        >
+          {isFullscreen ? <TbArrowsMinimize size={14} /> : <TbArrowsMaximize size={14} />}
+          <span>{isFullscreen ? "Minimize" : "Fullscreen"}</span>
+        </button>
       </div>
     </div>
   );

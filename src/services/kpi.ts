@@ -1,9 +1,11 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
+
 export const kpiService = createApi({
   reducerPath: "kpiService",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:8000/api",
+    baseUrl: apiBaseUrl ?? "http://localhost:8000/api",
   }),
   endpoints: (builder) => ({
     getLast13WeekTrend: builder.query({

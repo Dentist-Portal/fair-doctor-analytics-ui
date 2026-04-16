@@ -77,9 +77,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { TbArrowsDiagonal } from "react-icons/tb";
 import type { WeekTrendOverviewProps } from "../types/types";
+
+const SUMMARY_KPI_ORDER = [
+  "ohne_Leistung",
+  "MVZ_karten_ohne_Leistung",
+  "MVZ_Karten_Fehlen",
+  "Fehlende_Doku",
+] as const;
 
 export default function LastWorkingDaySummary({
   setFullscreenCard,
@@ -109,7 +116,7 @@ export default function LastWorkingDaySummary({
   const barChartData = useMemo(() => {
     if (!kpis) return [];
 
-    return Object.keys(kpis).map((kpi) => ({
+    return SUMMARY_KPI_ORDER.filter((kpi) => kpi in kpis).map((kpi) => ({
       label: kpi.replaceAll("_", " "),
       value: kpis[kpi],
     }));
