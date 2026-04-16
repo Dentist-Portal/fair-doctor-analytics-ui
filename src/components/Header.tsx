@@ -1,0 +1,64 @@
+import { useState } from "react";
+import type { HeaderArguments } from "../types/types";
+import LiveTimer from "./LiveTimer";
+
+const Header = ({ locations, setLocationId, locationId }: HeaderArguments) => {
+  const [isEngSelected, setIsEngselected] = useState<boolean>(false);
+
+  return (
+    <div className="bg-white w-full px-2 py-2 flex justify-between items-center">
+      <div className="flex gap-4 items-center">
+        <div className="px-2 flex items-center gap-6 border-r border-gray-400">
+          Icon
+          <p className="font-bold">
+            <span className=" text-blue-500">Fair</span>Doctors
+          </p>
+        </div>
+
+        <div className="flex gap-2 items-center text-sm text-gray-500">
+          <div className="w-2 h-2 rounded-full bg-green-500" />
+          <LiveTimer/>
+          <button
+            className="w-8 h-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer transition flex items-center justify-center text-gray-500"
+            onClick={() => window.location.reload()}
+          >
+            ↻
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-2 items-center">
+        <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setIsEngselected(false)}
+            className={`px-4 py-1.5 rounded-l-xl font-semibold text-xs hover:cursor-pointer ${!isEngSelected ? "bg-black text-white" : ""}`}
+          >
+            DE
+          </button>
+          <button
+            onClick={() => setIsEngselected(true)}
+            className={`px-4 py-1.5 rounded-r-xl ${isEngSelected ? "bg-black text-white" : ""} font-semibold text-xs hover:cursor-pointer`}
+          >
+            EN
+          </button>
+        </div>
+
+        <p className="text-xs font-semibold text-gray-400 uppercase hidden md:block">
+          location
+        </p>
+        <select 
+        value={locationId || ""}
+        onChange={(e) => setLocationId(Number(e.target.value))}
+        className="w-35 px-2 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 bg-gray-50 text-gray-700 outline-none focus:ring-2 focus:ring-blue-200 hover:cursor-pointer">
+          {locations.map((location) => (
+            <option value={location.id} key={location.id}>
+              {location.locationName}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+};
+
+export default Header;
