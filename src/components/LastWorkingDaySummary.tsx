@@ -1,30 +1,3 @@
-// const SmartXAxisTick = ({ x, y, payload }: any) => {
-//   const text = payload?.value ?? "";
-//   const words = text.split(" ");
-
-//   const lines =
-//     words.length > 2
-//       ? [
-//           words.slice(0, Math.ceil(words.length / 2)).join(" "),
-//           words.slice(Math.ceil(words.length / 2)).join(" "),
-//         ]
-//       : [text];
-
-//       console.log(lines);
-
-//   return (
-//     <g transform={`translate(${x},${y + 10})`}>
-//       <text textAnchor="middle" fill="#6b7280" fontSize={11}>
-//         {lines.map((line, i) => (
-//           <tspan key={i} x={0} dy={i === 0 ? 0 : 14}>
-//             {line}
-//           </tspan>
-//         ))}
-//       </text>
-//     </g>
-//   );
-// };
-
 const SmartXAxisTick = ({ x, y, payload }: any) => {
   const text = payload?.value ?? "";
   const maxCharsPerLine = window.innerWidth < 640 ? 8 : 12; // tweak based on chart width

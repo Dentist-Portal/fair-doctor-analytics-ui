@@ -37,4 +37,5 @@ export type HeaderArguments = {
   locationId: number | null;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  refetch: () => void
 };

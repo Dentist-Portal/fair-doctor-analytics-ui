@@ -9,8 +9,17 @@ const Header = ({
   locationId,
   isFullscreen,
   onToggleFullscreen,
+  refetch
 }: HeaderArguments) => {
   const [isEngSelected, setIsEngselected] = useState<boolean>(false);
+
+  const selectedLocation = locations?.find((location) => location.id === locationId)
+
+  const handleLocationChange = (e) => {
+    const id = e.target.value;
+    setLocationId(Number(id));
+    localStorage.setItem("location", String(id));
+  }
 
   return (
     <div className="bg-white w-full px-2 py-2 flex justify-between items-center">
@@ -27,7 +36,7 @@ const Header = ({
           <LiveTimer/>
           <button
             className="w-8 h-8 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer transition flex items-center justify-center text-gray-500"
-            onClick={() => window.location.reload()}
+            onClick={() => refetch()}
           >
             ↻
           </button>
@@ -51,13 +60,13 @@ const Header = ({
         </div>
 
         <p className="text-xs font-semibold text-gray-400 uppercase hidden md:block">
-          location
+          {selectedLocation?.locationName || "Location"}
         </p>
         <select 
         value={locationId || ""}
-        onChange={(e) => setLocationId(Number(e.target.value))}
+        onChange={handleLocationChange}
         className="w-35 px-2 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 bg-gray-50 text-gray-700 outline-none focus:ring-2 focus:ring-blue-200 hover:cursor-pointer">
-          {locations.map((location) => (
+          {locations && locations.map((location) => (
             <option value={location.id} key={location.id}>
               {location.locationName}
             </option>

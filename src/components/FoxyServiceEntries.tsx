@@ -29,9 +29,14 @@ const renderShape = (props: CustomSectorProps, hoveredIndex: number | null) => {
 export default function FoxyServiceEntries({
   setFullscreenCard,
   fullscreen,
-  data
+  data,
 }: WeekTrendOverviewProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{
+    x: number;
+    y: number;
+    midAngle: number;
+  } | null>(null);
 
   const captured = Number(data?.currentPercentage ?? 0);
   const pending = Number(data?.remainingPercentage ?? 0);
@@ -72,7 +77,9 @@ export default function FoxyServiceEntries({
       </div>
 
       <div className="flex items-center justify-center flex-1 mt-4">
-        <div className={`relative ${fullscreen === "foxi" ? "h-full max-h-[420px]" : "h-45"} w-full max-w-[320px]`}>
+        <div
+          className={`relative ${fullscreen === "foxi" ? "h-full max-h-[420px]" : "h-45"} w-full max-w-[320px]`}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -82,8 +89,29 @@ export default function FoxyServiceEntries({
                 startAngle={180}
                 endAngle={-180}
                 stroke="none"
-                onMouseEnter={(_, index) => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                onMouseEnter={(entry, index) => {
+                  setHoveredIndex(index);
+
+                  const RADIAN = Math.PI / 180;
+                  const radius = (entry.outerRadius || 80) + 20;
+
+                  const x =
+                    (entry.cx || 0) +
+                    radius * Math.cos(-(entry.midAngle || 0) * RADIAN);
+                  const y =
+                    (entry.cy || 0) +
+                    radius * Math.sin(-(entry.midAngle || 0) * RADIAN);
+
+                  setTooltipPos({
+                    x,
+                    y,
+                    midAngle: entry.midAngle || 0,
+                  });
+                }}
+                onMouseLeave={() => {
+                  setHoveredIndex(null);
+                  setTooltipPos(null);
+                }}
                 isAnimationActive
                 animationDuration={450}
                 animationEasing="ease-in-out"
@@ -105,31 +133,72 @@ export default function FoxyServiceEntries({
             </p>
           </div>
 
+          {hoveredIndex !== null && tooltipPos && (
+            <div
+              className="absolute bg-white border border-gray-200 shadow-lg rounded-xl px-3 py-2 z-10"
+              style={{
+                left: tooltipPos.x,
+                top: tooltipPos.y,
+                transform: `${hoveredIndex == 0 ? "translate(-60%, -50%)" : "translate(-40%, -35%)"}`,
+              }}
+            >
+              {/* Arrow */}
+              <div
+                className={`absolute left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45 ${
+                  tooltipPos.y > 100
+                    ? "top-[-4px] border-l border-t border-gray-200"
+                    : "bottom-[-4px] border-r border-b border-gray-200"
+                }`}
+              />
+
+              <p className="text-xs font-semibold text-gray-900">
+                {hoveredIndex === 0 ? "Entered" : "Pending"}
+              </p>
+
+              <div className="flex items-center gap-2 mt-2">
+                <div
+                  className={`w-3 h-3 rounded-sm ${
+                    hoveredIndex === 0 ? "bg-amber-500" : "bg-blue-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-500">
+                  {hoveredIndex === 0
+                    ? `Entered: ${captured}%`
+                    : `Remaining: ${pending}%`}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Hover tooltip */}
-          {hoveredIndex === 0 && (
+          {/* {hoveredIndex === 0 && (
             <div className="absolute left-0 top-1/2 -translate-y-3/4 bg-white border border-gray-200 shadow-md rounded-xl px-3 py-2">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white border-t border-l border-gray-200 rotate-45" />{" "}
               <p className="text-xs font-semibold text-gray-900">Entered</p>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-3 h-3 rounded-sm bg-amber-500" />
-                <span className="text-xs text-gray-500">Entered: {captured}%</span>
+                <span className="text-xs text-gray-500">
+                  Entered: {captured}%
+                </span>
               </div>
             </div>
           )}
 
           {hoveredIndex === 1 && (
             <div className="absolute right-2 bottom-6 bg-white border border-gray-200 shadow-lg rounded-xl px-3 py-2 z-10">
-              {/* Tooltip arrow */}
+              {/* Tooltip arrow 
               <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-l border-b border-gray-200 rotate-45" />
 
               <p className="text-xs font-semibold text-gray-900">Pending</p>
 
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-3 h-3 rounded-sm bg-blue-300" />
-                <span className="text-xs text-gray-500">Remaining: {pending}%</span>
+                <span className="text-xs text-gray-500">
+                  Remaining: {pending}%
+                </span>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

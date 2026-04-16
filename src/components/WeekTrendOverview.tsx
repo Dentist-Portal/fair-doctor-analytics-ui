@@ -6,6 +6,7 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -42,16 +43,13 @@ const KPI_CONFIG: Array<{
 
 const renderValueLabel =
   (color: string) =>
-  ({
-    x,
-    y,
-    value,
-  }: {
-    x?: number;
-    y?: number;
-    value?: number | string;
-  }) => {
-    if (x === undefined || y === undefined || value === undefined || value === null) {
+  ({ x, y, value }: { x?: number; y?: number; value?: number | string }) => {
+    if (
+      x === undefined ||
+      y === undefined ||
+      value === undefined ||
+      value === null
+    ) {
       return null;
     }
 
@@ -85,6 +83,48 @@ const renderValueLabel =
     );
   };
 
+type TrendTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    color: string;
+    dataKey: string;
+    payload: {
+      name: string;
+      weekRange?: string;
+    };
+  }>;
+  label?: string;
+};
+
+const TrendTooltip = ({ active, payload }: TrendTooltipProps) => {
+  if (!active || !payload?.length) return null;
+
+  const item = payload[0];
+
+  return (
+    <div className="rounded-2xl bg-slate-950/95 text-white px-3 py-2 shadow-xl border border-slate-700 backdrop-blur-sm">
+      <p className="text-xs font-bold">
+        {item.payload.weekRange ?? item.payload.name}
+      </p>
+
+      <div className="h-px bg-slate-700 my-2" />
+
+      <div className="flex items-center gap-2">
+        <div
+          className="w-2.5 h-2.5 rounded-full"
+          style={{ backgroundColor: item.color }}
+        />
+
+        <p className="text-xs font-medium text-slate-100">
+          {item.dataKey}:
+          <span className="ml-2 font-bold text-white">{item.value}</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const WeekTrendOverview = ({
   setFullscreenCard,
   fullscreen,
@@ -100,6 +140,7 @@ const WeekTrendOverview = ({
     return trendDataFromApi.map((week: KpiAPIData, index: number) => ({
       name: `W${index + 1}`,
       ...week.kpis,
+      weekRange: `KW ${index + 1} (${week.week.replaceAll("-", ".")})`,
     }));
   }, [trendDataFromApi]);
 
@@ -109,7 +150,7 @@ const WeekTrendOverview = ({
     >
       <div className="flex justify-between">
         <div>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-xs font-semibold text-gray-900">
             13-Week Trend Overview
           </p>
           <p className="text-xs text-gray-500 mt-1">
@@ -135,7 +176,7 @@ const WeekTrendOverview = ({
         {KPI_CONFIG.map((series) => (
           <div
             key={series.key}
-            className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 px-4 py-4 flex flex-col min-h-[240px] shadow-sm"
+            className="rounded-3xl border border-slate-200 bg-linear-to-br from-white via-slate-50 to-slate-100 px-4 py-4 flex flex-col min-h-60 shadow-sm"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -149,13 +190,17 @@ const WeekTrendOverview = ({
               </div>
             </div>
 
-            <div className="flex-1 min-h-[180px]">
+            <div className="flex-1 min-h-45">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
                   margin={{ top: 30, right: 18, bottom: 22, left: 22 }}
                 >
-                  <CartesianGrid vertical={false} stroke="#cbd5e1" strokeOpacity={0.35} />
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="#cbd5e1"
+                    strokeOpacity={0.35}
+                  />
                   <XAxis
                     dataKey="name"
                     tickLine={false}
@@ -170,12 +215,27 @@ const WeekTrendOverview = ({
                     width={34}
                     dx={-4}
                   />
+                  <Tooltip
+                    // itemStyle={{ color: "white" }}
+                    // labelStyle={{ color: "white" }}
+                    cursor={{
+                      stroke: series.color,
+                      strokeWidth: 2,
+                      strokeDasharray: "4 4",
+                    }}
+                    content={<TrendTooltip />}
+                  />
                   <Line
                     type="monotone"
                     dataKey={series.key}
                     stroke={series.color}
                     strokeWidth={3}
-                    dot={{ r: 3.5, strokeWidth: 2, fill: "#ffffff", stroke: series.color }}
+                    dot={{
+                      r: 3.5,
+                      strokeWidth: 2,
+                      fill: "#ffffff",
+                      stroke: series.color,
+                    }}
                     activeDot={{ r: 5, stroke: series.color, fill: "#ffffff" }}
                     isAnimationActive={false}
                   >

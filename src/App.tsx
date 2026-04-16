@@ -5,13 +5,14 @@ import Header from "./components/Header";
 import LastWorkingDaySummary from "./components/LastWorkingDaySummary";
 import WeekTrendOverview from "./components/WeekTrendOverview";
 import {
-  useGetFoxiChartDataQuery,
-  useGetLast13WeekTrendQuery,
-  useGetLocationsQuery,
-  useGetSummaryQuery,
+  getFoxiChartData,
+  getLast13WeekTrend,
+  getLocations,
+  getSummary,
 } from "./services/kpi";
 import DashboardSkeleton from "./components/skeleton/DashBoardSkeleton";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 function App() {
   const [fullscreenCard, setFullscreenCard] = useState<
     null | "trend" | "foxi" | "summary"
@@ -20,14 +21,29 @@ function App() {
   const [locationId, setLocationid] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const locationsQuery = useGetLocationsQuery();
+  const intervals = 10000;
+
+  const queryClient = useQueryClient();
+
+  const locationsQuery = useQuery({
+    queryKey: ["locations"],
+    queryFn: getLocations,
+  });
+
   useEffect(() => {
     const locations = locationsQuery.data?.data;
 
-    if (locations && locations.length > 0) {
-      setLocationid(locations[0].id);
-    }
-  }, [locationsQuery]);
+    if (!locations?.length || locationId !== null) return;
+
+    const savedLocation = localStorage.getItem("location");
+    const savedId = savedLocation ? Number(savedLocation) : null;
+
+    const validLocation = locations.find((loc: any) => loc.id === savedId);
+
+    const setLocation = validLocation ? validLocation.id : locations[0].id;
+
+    setLocationid(setLocation);
+  }, [locationsQuery.data, locationId]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -41,26 +57,34 @@ function App() {
     };
   }, []);
 
-  const trendQuery = useGetLast13WeekTrendQuery(locationId, {
-    pollingInterval: 10000,
-    skip: !locationId,
-  });
-  const summaryQuery = useGetSummaryQuery(locationId, {
-    pollingInterval: 10000,
-    skip: !locationId,
-  });
-  const foxiQuery = useGetFoxiChartDataQuery(locationId, {
-    pollingInterval: 10000,
-    skip: !locationId,
+  const trendQuery = useQuery({
+    queryKey: ["dashboard", "trends", locationId],
+    queryFn: () => getLast13WeekTrend(locationId),
+    refetchInterval: intervals,
+    enabled: !!locationId,
   });
 
+  const summaryQuery = useQuery({
+    queryKey: ["dashboard", "summary", locationId],
+    queryFn: () => getSummary(locationId),
+    refetchInterval: intervals,
+    enabled: !!locationId,
+  });
+
+  const foxiQuery = useQuery({
+    queryKey: ["dashboard", "foxi", locationId],
+    queryFn: () => getFoxiChartData(locationId),
+    refetchInterval: intervals,
+    enabled: !!locationId,
+  });
+
+  const refetchDashboard = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["dashboard"],
+    });
+  };
   const isDashboardLoading =
-    trendQuery.isLoading ||
-    summaryQuery.isLoading ||
-    foxiQuery.isLoading ||
-    locationsQuery.isLoading;
-
-  if (isDashboardLoading) return <DashboardSkeleton />;
+    trendQuery.isLoading || summaryQuery.isLoading || foxiQuery.isLoading;
 
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
@@ -116,60 +140,63 @@ function App() {
         locationId={locationId}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
+        refetch={refetchDashboard}
       />
-      <div
-        className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2 px-2 w-full min-w-0"
-      >
-        <WeekTrendOverview
-          setFullscreenCard={setFullscreenCard}
-          fullscreen={fullscreenCard}
-          data={trendQuery.data}
-        />
-        <LastWorkingDaySummary
-          setFullscreenCard={setFullscreenCard}
-          fullscreen={fullscreenCard}
-          data={summaryQuery.data}
-        />
-        <FoxyServiceEntries
-          setFullscreenCard={setFullscreenCard}
-          fullscreen={fullscreenCard}
-          data={foxiQuery.data}
-        />
-        <AnimatePresence>
-          {fullscreenCard && (
-            <motion.div
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm p-4 flex items-end"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
+      {isDashboardLoading ? (
+        <DashboardSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2 px-2 w-full min-w-0">
+          <WeekTrendOverview
+            setFullscreenCard={setFullscreenCard}
+            fullscreen={fullscreenCard}
+            data={trendQuery.data}
+          />
+          <LastWorkingDaySummary
+            setFullscreenCard={setFullscreenCard}
+            fullscreen={fullscreenCard}
+            data={summaryQuery.data}
+          />
+          <FoxyServiceEntries
+            setFullscreenCard={setFullscreenCard}
+            fullscreen={fullscreenCard}
+            data={foxiQuery.data}
+          />
+          <AnimatePresence>
+            {fullscreenCard && (
               <motion.div
-                initial={{ y: 80, scale: 0.96, opacity: 0 }}
-                animate={{ y: 0, scale: 1, opacity: 1 }}
-                exit={{ y: 80, scale: 0.96, opacity: 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 22,
-                }}
-                className="relative bg-white rounded-3xl w-full h-[90%] p-6 flex flex-col"
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm p-4 flex items-end"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
               >
-                <button
-                  onClick={() => setFullscreenCard(null)}
-                  className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-slate-700 text-white"
+                <motion.div
+                  initial={{ y: 80, scale: 0.96, opacity: 0 }}
+                  animate={{ y: 0, scale: 1, opacity: 1 }}
+                  exit={{ y: 80, scale: 0.96, opacity: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 22,
+                  }}
+                  className="relative bg-white rounded-3xl w-full h-[90%] p-6 flex flex-col"
                 >
-                  ✕
-                </button>
+                  <button
+                    onClick={() => setFullscreenCard(null)}
+                    className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-slate-700 text-white"
+                  >
+                    ✕
+                  </button>
 
-                <div className="flex-1 min-h-0 min-w-0">
-                  {renderFullScreenCard()}
-                </div>
+                  <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
+                    {renderFullScreenCard()}
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
