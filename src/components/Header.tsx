@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import type { HeaderArguments } from "../types/types";
 import LiveTimer from "./LiveTimer";
 import { TbArrowsMaximize, TbArrowsMinimize } from "react-icons/tb";
@@ -15,7 +15,7 @@ const Header = ({
 
   const selectedLocation = locations?.find((location) => location.id === locationId)
 
-  const handleLocationChange = (e) => {
+  const handleLocationChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setLocationId(Number(id));
     localStorage.setItem("location", String(id));

@@ -43,15 +43,26 @@ const KPI_CONFIG: Array<{
 
 const renderValueLabel =
   (color: string) =>
-  ({ x, y, value }: { x?: number; y?: number; value?: number | string }) => {
+  ({
+    x: rawX,
+    y: rawY,
+    value,
+  }: {
+    x?: number | string;
+    y?: number | string;
+    value?: unknown;
+  }) => {
     if (
-      x === undefined ||
-      y === undefined ||
+      rawX === undefined ||
+      rawY === undefined ||
       value === undefined ||
       value === null
     ) {
       return null;
     }
+
+    const x = Number(rawX);
+    const y = Number(rawY);
 
     const stringValue = String(value);
     const labelWidth = Math.max(28, stringValue.length * 7 + 10);
@@ -77,7 +88,7 @@ const renderValueLabel =
           textAnchor="middle"
           dominantBaseline="middle"
         >
-          {value}
+          {stringValue}
         </text>
       </g>
     );
